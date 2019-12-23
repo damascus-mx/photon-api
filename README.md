@@ -1,2 +1,2 @@
-# photon-api
+# Photon
 Photon API made with Go.
