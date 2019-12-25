@@ -8,6 +8,8 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/cors"
+
+	utils "github.com/damascus-mx/photon-api/src/core/utils"
 )
 
 // InitApplication Creates a new router instance
@@ -49,6 +51,12 @@ func InitApplication() *chi.Mux {
 // setRoutes Attach routes/handlers
 func setRoutes(router *chi.Mux) {
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Welcome"))
+		w.Header().Set("Content-Type", "application/json")
+		res, err := utils.BuildMessage([]byte("Welcome from JSON Method"))
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte("Something happened"))
+		}
+		w.Write(res)
 	})
 }
