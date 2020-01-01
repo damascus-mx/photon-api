@@ -1,14 +1,17 @@
-package core
+package infrastructure
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/go-chi/render"
+	"github.com/go-redis/redis/v7"
 
 	config "github.com/damascus-mx/photon-api/src/core/config"
-	contracts "github.com/damascus-mx/photon-api/src/core/interfaces"
+	handler "github.com/damascus-mx/photon-api/src/infrastructure/handlers"
+	repository "github.com/damascus-mx/photon-api/src/infrastructure/repositories"
 	usecase "github.com/damascus-mx/photon-api/src/usecases"
 )
 
@@ -19,9 +22,17 @@ type IRouter interface {
 }
 
 // Router HTTP Router implementation
-type Router struct{}
+type Router struct {
+	DB    *sql.DB
+	Redis *redis.Client
+}
 
-// InitializeRouter Starts the given router with needed configs
+// NewHTTPRouter Returns an HTTP Router instance
+func NewHTTPRouter(db *sql.DB, redis *redis.Client) *Router {
+	return &Router{db, redis}
+}
+
+// InitializeRouter Starts the given router with required configs
 func (r *Router) InitializeRouter(router *chi.Mux) *chi.Mux {
 	// Get CORS policies
 	cors := config.GetCORS()
@@ -45,8 +56,7 @@ func (r *Router) InitializeRouter(router *chi.Mux) *chi.Mux {
 
 // SetRoutes Mounts resources into the given router
 func (r *Router) SetRoutes(router *chi.Mux) {
-	var user contracts.Usecase = &usecase.UserUsecase{}
-	router.Route("/v1", func(r chi.Router) {
-		r.Mount("/user", user.Routes())
+	router.Route("/v1", func(routerChi chi.Router) {
+		routerChi.Mount("/user", handler.NewUserHandler(usecase.NewUserUsecase(repository.NewUserRepository(r.DB))).Routes())
 	})
 }
