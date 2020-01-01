@@ -55,7 +55,7 @@ func (u *UserRepository) FetchAll() ([]*entity.UserModel, error) {
 	for rows.Next() {
 		user := new(entity.UserModel)
 		fmt.Println(user)
-		err := rows.Scan(&user.ID, &user.Username, &user.Name, &user.Surname, &user.Birth, &user.Password, &user.Image,
+		err := rows.Scan(&user.ID, &user.Name, &user.Surname, &user.Birth, &user.Username, &user.Password, &user.Image,
 			&user.Role, &user.Active, &user.CreatedAt, &user.UpdatedAt)
 		if err != nil {
 			return nil, err
