@@ -5,6 +5,7 @@
 [![Issues](https://img.shields.io/github/issues/damascus-mx/photon-api)](https://github.com/damascus-mx/photon-api/issues)
 ![Languages](https://img.shields.io/github/languages/count/damascus-mx/photon-api)
 ![Size](https://img.shields.io/github/repo-size/damascus-mx/photon-api)
+[![Build Status](https://travis-ci.com/damascus-mx/photon-api.svg?branch=master)](https://travis-ci.com/damascus-mx/photon-api)
 
 **Photon** is a platform where students can fetch their lab materials easier than ever.
 
