@@ -2,6 +2,7 @@ package infrastructure
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 
 	entity "github.com/damascus-mx/photon-api/src/entity"
@@ -18,29 +19,36 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 	return &UserRepository{db}
 }
 
+// ---- USER OPERATIONS ----
+
 // Save Inserts user into persistence layer
-func (u *UserRepository) Save(user *entity.UserModel) error {
+func (u *UserRepository) Save(user *entity.UserModel) (int, error) {
 	// Store new object into DB
-	rows, err := u.DB.Query("SELECT * FROM users")
+	statement := `INSERT INTO users (name, surname, birth, username, password) VALUES ($1, $2, $3, $4, $5)
+	RETURNING id`
+	id := 0
+	err := u.DB.QueryRow(statement, user.Name, user.Surname, user.Birth, user.Username, user.Password).Scan(&id)
 	if err != nil {
-		return err
+		return 0, err
+	} else if id == 0 {
+		return 0, errors.New("Cannot save user")
 	}
-	fmt.Println(rows)
+	fmt.Printf("\n%d", id)
 
-	defer rows.Close()
-
-	return nil
+	return id, nil
 }
 
 // FetchByID Get user by ID
-func (u *UserRepository) FetchByID(id int) *entity.UserModel {
-	/*row := u.DB.QueryRow("SELECT * FROM users WHERE id = %i", id)
-	if row == nil {
-		return nil
+func (u *UserRepository) FetchByID(id int64) (*entity.UserModel, error) {
+	statement := `SELECT * FROM users WHERE id = $1`
+	user := new(entity.UserModel)
+	err := u.DB.QueryRow(statement, id).Scan(&user.ID, &user.Name, &user.Surname, &user.Birth, &user.Username, &user.Password, &user.Image,
+		&user.Role, &user.Active, &user.CreatedAt, &user.UpdatedAt)
+	if err != nil {
+		return nil, err
 	}
 
-	row.*/
-	return nil
+	return user, nil
 }
 
 // FetchAll Get all users
@@ -54,7 +62,6 @@ func (u *UserRepository) FetchAll() ([]*entity.UserModel, error) {
 	users := make([]*entity.UserModel, 0)
 	for rows.Next() {
 		user := new(entity.UserModel)
-		fmt.Println(user)
 		err := rows.Scan(&user.ID, &user.Name, &user.Surname, &user.Birth, &user.Username, &user.Password, &user.Image,
 			&user.Role, &user.Active, &user.CreatedAt, &user.UpdatedAt)
 		if err != nil {
