@@ -1,4 +1,11 @@
 # Photon
+[![Release](https://img.shields.io/github/release/damascus-mx/photon-api)](https://github.com/damascus-mx/photon-api/releases)
+![Tag](https://img.shields.io/github/v/tag/damascus-mx/photon-api)
+[![AGPL-3.0](https://img.shields.io/github/license/damascus-mx/photon-api)](LICENSE)
+[![Issues](https://img.shields.io/github/issues/damascus-mx/photon-api)](https://github.com/damascus-mx/photon-api/issues)
+![Languages](https://img.shields.io/github/languages/count/damascus-mx/photon-api)
+![Size](https://img.shields.io/github/repo-size/damascus-mx/photon-api)
+
 **Photon** is a platform where students can fetch their lab materials easier than ever.
 
 In addition, **Photon** contains more functionalities like:
