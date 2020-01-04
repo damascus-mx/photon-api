@@ -31,7 +31,7 @@ func NewUserHandler(userCase UserUsecase) *UserHandler {
 // Routes Exports all routes
 func (u *UserHandler) Routes() *chi.Mux {
 	router := chi.NewRouter()
-	router.Get("/", u.getAll)
+	router.With(paginate).Get("/", u.getAll)
 	router.Post("/", u.create)
 
 	router.Route("/{userID}", func(r chi.Router) {
@@ -98,5 +98,13 @@ func (u *UserHandler) userContext(next http.Handler) http.Handler {
 
 		ctx := context.WithValue(r.Context(), "user", user)
 		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func paginate(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// just a stub.. some ideas are to look at URL query params for something like
+		// the page number, or the limit, and send a query cursor down the chain
+		next.ServeHTTP(w, r)
 	})
 }
