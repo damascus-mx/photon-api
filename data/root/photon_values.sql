@@ -80,6 +80,55 @@ INSERT INTO USERS(NAME, SURNAME, BIRTH, USERNAME, PASSWORD, ROLE) VALUES (
     '1117250027',
     'password',
     'ROLE_SUPPORT'
+), (
+    'Juan Carlos',
+    'Arzaga Terrazas',
+    '04-18-1985',
+    '1117250028',
+    'password',
+    'ROLE_EMPLOYEE'
+), (
+    'Alfonso',
+    'Arzaga Terrazas',
+    '01-20-1990',
+    '1117250029',
+    'password',
+    'ROLE_PRINCIPAL'
+);
+
+-- Create College -tenant-
+INSERT INTO COLLEGES(NAME, SHORTNAME, FK_OWNER, COUNTRY, STATE, FOUNDED_AT) VALUES (
+    'Universidad Autonoma de Chihuahua',
+    'UACH',
+    6,
+    'MX',
+    'MX-CHH',
+    '12-08-1954'
+);
+
+-- Create faculty
+INSERT INTO FACULTIES(NAME, FK_COLLEGE) VALUES (
+    'Facultad de Ciencias Quimicas',
+    1
+);
+
+-- Attach users to faculties
+INSERT INTO FACULTY_USERS VALUES(
+    1, 2
+), (
+    1, 3
+), (
+    1, 4
+), (
+    1, 5
+), (
+    1, 7
+), (
+    1, 8
+), (
+    1, 10
+), (
+    1, 11   
 );
 
 -- Create courses
