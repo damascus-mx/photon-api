@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	entity "github.com/damascus-mx/photon-api/src/entity"
+	"github.com/damascus-mx/photon-api/src/entity"
 	_ "github.com/lib/pq"
 )
 
@@ -98,4 +98,17 @@ func (u *UserRepository) Update(user *entity.UserModel) error {
 	}
 
 	return nil
+}
+
+// FetchByUsername Retrieves a user by username
+func (u *UserRepository) FetchByUsername(username string) (*entity.UserModel, error) {
+	statement := `SELECT * FROM users WHERE username = $1`
+	user := new(entity.UserModel)
+	err := u.DB.QueryRow(statement, username).Scan(&user.ID, &user.Name, &user.Surname, &user.Birth, &user.Username, &user.Password, &user.Image,
+		&user.Role, &user.Active, &user.CreatedAt, &user.UpdatedAt)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
 }

@@ -2,10 +2,12 @@ package usecase
 
 import (
 	"errors"
+	"fmt"
 	"net/url"
 	"time"
 
 	config "github.com/damascus-mx/photon-api/src/core/config"
+	core "github.com/damascus-mx/photon-api/src/core/helper"
 	helper "github.com/damascus-mx/photon-api/src/core/helper"
 	entity "github.com/damascus-mx/photon-api/src/entity"
 )
@@ -17,6 +19,7 @@ type UserRepository interface {
 	FetchAll(limit, index int64) ([]*entity.UserModel, error)
 	Delete(id int64) error
 	Update(user *entity.UserModel) error
+	FetchByUsername(username string) (*entity.UserModel, error)
 }
 
 // UserUsecase User usecase
@@ -33,6 +36,10 @@ func NewUserUsecase(userRepository UserRepository) *UserUsecase {
 
 // CreateUser Save a new user
 func (u *UserUsecase) CreateUser(name, surname, username, password, birth string) (int, error) {
+	if len(password) < 8 {
+		return 0, errors.New("Password must be 8-digit long")
+	}
+
 	// Convert birth field to Time
 	birthFormatted, err := time.Parse(config.MonthDayYear, birth)
 	if err != nil {
@@ -92,6 +99,11 @@ func (u *UserUsecase) UpdateUser(user *entity.UserModel, payload *url.Values) er
 
 	// Hash password
 	if password := payload.Get("password"); password != "" {
+
+		if len(password) < 8 {
+			return errors.New("Password must be 8-digit long")
+		}
+
 		hash64, err := helper.HashString(password)
 		if err != nil {
 			return err
@@ -124,4 +136,33 @@ func (u *UserUsecase) UpdateUser(user *entity.UserModel, payload *url.Values) er
 	}
 
 	return nil
+}
+
+// AuthenticateUser Logs a user
+func (u *UserUsecase) AuthenticateUser(username, password string) (string, error) {
+	if username == "" || password == "" {
+		return "", errors.New("Username / Password invalid")
+	}
+
+	user, err := u.userRepository.FetchByUsername(username)
+	if err != nil {
+		return "", err
+	}
+
+	ok, err := helper.CompareString(password, user.Password)
+	fmt.Printf("\nCorrect Password: %t", ok)
+	if err != nil {
+		return "", err
+	} else if !ok {
+		return "", errors.New("Username / Password invalid")
+	}
+
+	token, err := core.GenerateJWT(user)
+	if err != nil {
+		return "", err
+	} else if token == "" {
+		return "", errors.New("Username / Password invalid")
+	}
+
+	return token, nil
 }

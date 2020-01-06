@@ -21,6 +21,7 @@ type UserUsecase interface {
 	GetUserByID(id int64) (*entity.UserModel, error)
 	DeleteUser(id int64) error
 	UpdateUser(user *entity.UserModel, payload *url.Values) error
+	AuthenticateUser(username, password string) (string, error)
 }
 
 // UserHandler HTTP Handler for user
@@ -28,7 +29,12 @@ type UserHandler struct {
 	userUsecase UserUsecase
 }
 
-type key int
+type (
+	key         int
+	tknResponse struct {
+		Token string `json:"token"`
+	}
+)
 
 const (
 	userCtx key = iota
@@ -44,9 +50,10 @@ func (u *UserHandler) Routes() *chi.Mux {
 	router := chi.NewRouter()
 	router.With(md.PaginateHandler).Get("/", u.getAll)
 	router.Post("/", u.create)
+	router.Post("/authenticate", u.signIn)
 
 	router.Route("/{userID}", func(r chi.Router) {
-		r.With(u.userContext).Get("/", u.getByID)
+		r.With(md.AuthenticationHandler).With(u.userContext).Get("/", u.getByID)
 		r.Delete("/", u.delete)
 		r.With(u.userContext).Put("/", u.delete)
 	})
@@ -72,7 +79,7 @@ func (u *UserHandler) create(w http.ResponseWriter, r *http.Request) {
 
 // Get all users
 func (u *UserHandler) getAll(w http.ResponseWriter, r *http.Request) {
-	params, ok := r.Context().Value("paginateParams").(*md.PaginateParams)
+	params, ok := r.Context().Value(md.ParamCtx).(*md.PaginateParams)
 	if !ok {
 		render.Status(r, http.StatusInternalServerError)
 		render.JSON(w, r, &utils.ResponseModel{Message: http.StatusText(500)})
@@ -140,6 +147,20 @@ func (u *UserHandler) update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.JSON(w, r, &utils.ResponseModel{Message: fmt.Sprintf("User %d successfully updated", user.ID)})
+}
+
+func (u *UserHandler) signIn(w http.ResponseWriter, r *http.Request) {
+	username := r.FormValue("username")
+	password := r.FormValue("password")
+
+	token, err := u.userUsecase.AuthenticateUser(username, password)
+	if err != nil {
+		render.Status(r, http.StatusBadRequest)
+		render.JSON(w, r, &utils.ResponseModel{Message: "Username / Password invalid"})
+		return
+	}
+
+	render.JSON(w, r, &tknResponse{Token: token})
 }
 
 // --> USER CONTEXT <--

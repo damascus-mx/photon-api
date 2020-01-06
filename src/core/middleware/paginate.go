@@ -12,6 +12,11 @@ type PaginateParams struct {
 	Limit int64
 }
 
+const (
+	// ParamCtx param context index
+	ParamCtx key = iota
+)
+
 // PaginateHandler Sets paginate required params to context
 func PaginateHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -33,7 +38,7 @@ func PaginateHandler(next http.Handler) http.Handler {
 		index := (limit * page) - limit
 
 		r.URL.Query().Set("limit", strconv.FormatInt(limit, 10))
-		ctx := context.WithValue(r.Context(), "paginateParams", &PaginateParams{index, limit})
+		ctx := context.WithValue(r.Context(), ParamCtx, &PaginateParams{index, limit})
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
