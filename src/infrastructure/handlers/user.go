@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 
 	md "github.com/damascus-mx/photon-api/src/core/middleware"
@@ -19,12 +20,19 @@ type UserUsecase interface {
 	GetAllUsers(limit, index int64) ([]*entity.UserModel, error)
 	GetUserByID(id int64) (*entity.UserModel, error)
 	DeleteUser(id int64) error
+	UpdateUser(user *entity.UserModel, payload *url.Values) error
 }
 
 // UserHandler HTTP Handler for user
 type UserHandler struct {
 	userUsecase UserUsecase
 }
+
+type key int
+
+const (
+	userCtx key = iota
+)
 
 // NewUserHandler Returns a handler instance
 func NewUserHandler(userCase UserUsecase) *UserHandler {
@@ -39,6 +47,8 @@ func (u *UserHandler) Routes() *chi.Mux {
 
 	router.Route("/{userID}", func(r chi.Router) {
 		r.With(u.userContext).Get("/", u.getByID)
+		r.Delete("/", u.delete)
+		r.With(u.userContext).Put("/", u.delete)
 	})
 
 	return router
@@ -85,7 +95,7 @@ func (u *UserHandler) getAll(w http.ResponseWriter, r *http.Request) {
 
 // Get user by ID or username
 func (u *UserHandler) getByID(w http.ResponseWriter, r *http.Request) {
-	user, ok := r.Context().Value("user").(*entity.UserModel)
+	user, ok := r.Context().Value(userCtx).(*entity.UserModel)
 	if !ok {
 		render.Status(r, http.StatusInternalServerError)
 		render.JSON(w, r, &utils.ResponseModel{Message: http.StatusText(500)})
@@ -114,6 +124,24 @@ func (u *UserHandler) delete(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, &utils.ResponseModel{Message: fmt.Sprintf("User %d successfully deleted", userID)})
 }
 
+func (u *UserHandler) update(w http.ResponseWriter, r *http.Request) {
+	user, ok := r.Context().Value(userCtx).(*entity.UserModel)
+	if !ok {
+		render.Status(r, http.StatusInternalServerError)
+		render.JSON(w, r, &utils.ResponseModel{Message: http.StatusText(500)})
+		return
+	}
+
+	err := u.userUsecase.UpdateUser(user, &r.PostForm)
+	if err != nil {
+		render.Status(r, http.StatusBadRequest)
+		render.JSON(w, r, &utils.ResponseModel{Message: err.Error()})
+		return
+	}
+
+	render.JSON(w, r, &utils.ResponseModel{Message: fmt.Sprintf("User %d successfully updated", user.ID)})
+}
+
 // --> USER CONTEXT <--
 // Handler as middelware to retrieve user with ID, sets user into context
 func (u *UserHandler) userContext(next http.Handler) http.Handler {
@@ -127,7 +155,7 @@ func (u *UserHandler) userContext(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), "user", user)
+		ctx := context.WithValue(r.Context(), userCtx, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

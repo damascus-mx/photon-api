@@ -1,6 +1,8 @@
 package usecase
 
 import (
+	"errors"
+	"net/url"
 	"time"
 
 	config "github.com/damascus-mx/photon-api/src/core/config"
@@ -13,6 +15,8 @@ type UserRepository interface {
 	Save(user *entity.UserModel) (int, error)
 	FetchByID(id int64) (*entity.UserModel, error)
 	FetchAll(limit, index int64) ([]*entity.UserModel, error)
+	Delete(id int64) error
+	Update(user *entity.UserModel) error
 }
 
 // UserUsecase User usecase
@@ -30,7 +34,7 @@ func NewUserUsecase(userRepository UserRepository) *UserUsecase {
 // CreateUser Save a new user
 func (u *UserUsecase) CreateUser(name, surname, username, password, birth string) (int, error) {
 	// Convert birth field to Time
-	birthFormatted, err := time.Parse(config.RFC3339Tiny, birth)
+	birthFormatted, err := time.Parse(config.MonthDayYear, birth)
 	if err != nil {
 		return 0, err
 	}
@@ -72,5 +76,52 @@ func (u *UserUsecase) GetUserByID(id int64) (*entity.UserModel, error) {
 
 // DeleteUser Deletes given user row
 func (u *UserUsecase) DeleteUser(id int64) error {
+	return u.userRepository.Delete(id)
+}
+
+// UpdateUser Update given user row
+func (u *UserUsecase) UpdateUser(user *entity.UserModel, payload *url.Values) error {
+	// Convert birth
+	if birth := payload.Get("birth"); birth != "" {
+		birthFormatted, err := time.Parse(config.MonthDayYear, birth)
+		if err != nil {
+			return err
+		}
+		user.Birth = birthFormatted
+	}
+
+	// Hash password
+	if password := payload.Get("password"); password != "" {
+		hash64, err := helper.HashString(password)
+		if err != nil {
+			return err
+		}
+
+		user.Password = hash64
+	}
+
+	// Set role
+	if payloadRole := payload.Get("role"); payloadRole != "" {
+		isValid := false
+
+		for _, role := range entity.UserRoles {
+			if payloadRole == role {
+				isValid = true
+				break
+			}
+		}
+
+		if !isValid {
+			return errors.New("User role is not valid")
+		}
+	}
+
+	user.UpdatedAt = time.Now()
+
+	err := user.Validate()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

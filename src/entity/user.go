@@ -20,6 +20,19 @@ type UserModel struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+// UserRoles User roles enum
+var UserRoles = [...]string{
+	"ROLE_STUDENT",
+	"ROLE_TEACHER",
+	"ROLE_OPERATOR",
+	"ROLE_MANAGER",
+	"ROLE_ADMIN",
+	"ROLE_ROOT",
+	"ROLE_SUPPORT",
+	"ROLE_EMPLOYEE",
+	"ROLE_PRINCIPAL",
+}
+
 // Validate Verify model
 func (u *UserModel) Validate() error {
 	if u.Name == "" || u.Surname == "" || u.Username == "" || u.Password == "" ||
