@@ -12,7 +12,7 @@ import (
 type UserRepository interface {
 	Save(user *entity.UserModel) (int, error)
 	FetchByID(id int64) (*entity.UserModel, error)
-	FetchAll() ([]*entity.UserModel, error)
+	FetchAll(limit, index int64) ([]*entity.UserModel, error)
 }
 
 // UserUsecase User usecase
@@ -61,11 +61,16 @@ func (u *UserUsecase) CreateUser(name, surname, username, password, birth string
 }
 
 // GetAllUsers Retrieves all users
-func (u *UserUsecase) GetAllUsers() ([]*entity.UserModel, error) {
-	return u.userRepository.FetchAll()
+func (u *UserUsecase) GetAllUsers(limit, index int64) ([]*entity.UserModel, error) {
+	return u.userRepository.FetchAll(limit, index)
 }
 
 // GetUserByID Retrieves user by ID or username
 func (u *UserUsecase) GetUserByID(id int64) (*entity.UserModel, error) {
 	return u.userRepository.FetchByID(id)
+}
+
+// DeleteUser Deletes given user row
+func (u *UserUsecase) DeleteUser(id int64) error {
+	return nil
 }

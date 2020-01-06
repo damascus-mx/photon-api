@@ -2,9 +2,11 @@ package infrastructure
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 
+	md "github.com/damascus-mx/photon-api/src/core/middleware"
 	utils "github.com/damascus-mx/photon-api/src/core/util"
 	"github.com/damascus-mx/photon-api/src/entity"
 	"github.com/go-chi/chi"
@@ -14,8 +16,9 @@ import (
 // UserUsecase User usecase interface
 type UserUsecase interface {
 	CreateUser(name, surname, username, password, birth string) (int, error)
-	GetAllUsers() ([]*entity.UserModel, error)
+	GetAllUsers(limit, index int64) ([]*entity.UserModel, error)
 	GetUserByID(id int64) (*entity.UserModel, error)
+	DeleteUser(id int64) error
 }
 
 // UserHandler HTTP Handler for user
@@ -31,12 +34,11 @@ func NewUserHandler(userCase UserUsecase) *UserHandler {
 // Routes Exports all routes
 func (u *UserHandler) Routes() *chi.Mux {
 	router := chi.NewRouter()
-	router.With(paginate).Get("/", u.getAll)
+	router.With(md.PaginateHandler).Get("/", u.getAll)
 	router.Post("/", u.create)
 
 	router.Route("/{userID}", func(r chi.Router) {
-		r.Use(u.userContext)
-		r.Get("/", u.getByID)
+		r.With(u.userContext).Get("/", u.getByID)
 	})
 
 	return router
@@ -47,7 +49,7 @@ func (u *UserHandler) Routes() *chi.Mux {
 // Create user
 func (u *UserHandler) create(w http.ResponseWriter, r *http.Request) {
 	// Save user
-	_, err := u.userUsecase.CreateUser(r.FormValue("name"), r.FormValue("surname"), r.FormValue("username"),
+	userID, err := u.userUsecase.CreateUser(r.FormValue("name"), r.FormValue("surname"), r.FormValue("username"),
 		r.FormValue("password"), r.FormValue("birth"))
 	if err != nil {
 		render.Status(r, http.StatusBadRequest)
@@ -55,15 +57,26 @@ func (u *UserHandler) create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.JSON(w, r, utils.ResponseModel{Message: "User created"})
+	render.JSON(w, r, &utils.ResponseModel{Message: fmt.Sprintf("User %d successfully created", userID)})
 }
 
 // Get all users
 func (u *UserHandler) getAll(w http.ResponseWriter, r *http.Request) {
-	users, err := u.userUsecase.GetAllUsers()
+	params, ok := r.Context().Value("paginateParams").(*md.PaginateParams)
+	if !ok {
+		render.Status(r, http.StatusInternalServerError)
+		render.JSON(w, r, &utils.ResponseModel{Message: http.StatusText(500)})
+		return
+	}
+
+	users, err := u.userUsecase.GetAllUsers(params.Limit, params.Index)
 	if err != nil {
 		render.Status(r, http.StatusInternalServerError)
 		render.JSON(w, r, &utils.ResponseModel{Message: err.Error()})
+		return
+	} else if len(users) <= 0 {
+		render.Status(r, http.StatusNotFound)
+		render.JSON(w, r, &utils.ResponseModel{Message: "Users not found"})
 		return
 	}
 
@@ -72,8 +85,7 @@ func (u *UserHandler) getAll(w http.ResponseWriter, r *http.Request) {
 
 // Get user by ID or username
 func (u *UserHandler) getByID(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	user, ok := ctx.Value("user").(*entity.UserModel)
+	user, ok := r.Context().Value("user").(*entity.UserModel)
 	if !ok {
 		render.Status(r, http.StatusInternalServerError)
 		render.JSON(w, r, &utils.ResponseModel{Message: http.StatusText(500)})
@@ -81,6 +93,25 @@ func (u *UserHandler) getByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.JSON(w, r, user)
+}
+
+// Delete user by ID
+func (u *UserHandler) delete(w http.ResponseWriter, r *http.Request) {
+	userID, err := strconv.ParseInt(chi.URLParam(r, "userID"), 10, 64)
+	if err != nil {
+		render.Status(r, http.StatusBadRequest)
+		render.JSON(w, r, &utils.ResponseModel{Message: "Invalid user ID"})
+		return
+	}
+
+	err = u.userUsecase.DeleteUser(userID)
+	if err != nil {
+		render.Status(r, http.StatusInternalServerError)
+		render.JSON(w, r, &utils.ResponseModel{Message: err.Error()})
+		return
+	}
+
+	render.JSON(w, r, &utils.ResponseModel{Message: fmt.Sprintf("User %d successfully deleted", userID)})
 }
 
 // --> USER CONTEXT <--
@@ -98,13 +129,5 @@ func (u *UserHandler) userContext(next http.Handler) http.Handler {
 
 		ctx := context.WithValue(r.Context(), "user", user)
 		next.ServeHTTP(w, r.WithContext(ctx))
-	})
-}
-
-func paginate(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// just a stub.. some ideas are to look at URL query params for something like
-		// the page number, or the limit, and send a query cursor down the chain
-		next.ServeHTTP(w, r)
 	})
 }

@@ -33,7 +33,6 @@ func (u *UserRepository) Save(user *entity.UserModel) (int, error) {
 	} else if id == 0 {
 		return 0, errors.New("Cannot save user")
 	}
-	fmt.Printf("\n%d", id)
 
 	return id, nil
 }
@@ -52,8 +51,8 @@ func (u *UserRepository) FetchByID(id int64) (*entity.UserModel, error) {
 }
 
 // FetchAll Get all users
-func (u *UserRepository) FetchAll() ([]*entity.UserModel, error) {
-	rows, err := u.DB.Query("SELECT * FROM users")
+func (u *UserRepository) FetchAll(limit, index int64) ([]*entity.UserModel, error) {
+	rows, err := u.DB.Query(fmt.Sprintf(`SELECT * FROM users WHERE id > %d ORDER BY id ASC FETCH FIRST %d ROWS ONLY`, index, limit))
 	if err != nil {
 		return nil, err
 	}
