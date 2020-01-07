@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
 	"strconv"
 
 	md "github.com/damascus-mx/photon-api/src/core/middleware"
@@ -20,7 +19,7 @@ type UserUsecase interface {
 	GetAllUsers(limit, index int64) ([]*entity.UserModel, error)
 	GetUserByID(id int64) (*entity.UserModel, error)
 	DeleteUser(id int64) error
-	UpdateUser(user *entity.UserModel, payload *url.Values) error
+	UpdateUser(user *entity.UserModel, payload *entity.UserPayload) error
 	AuthenticateUser(username, password string) (string, error)
 }
 
@@ -133,6 +132,13 @@ func (u *UserHandler) delete(w http.ResponseWriter, r *http.Request) {
 
 // Update user
 func (u *UserHandler) update(w http.ResponseWriter, r *http.Request) {
+	loggedUser, ok := r.Context().Value("user").(*entity.UserModel)
+	if !ok {
+		render.Status(r, http.StatusUnauthorized)
+		render.JSON(w, r, &utils.ResponseModel{Message: http.StatusText(http.StatusUnauthorized)})
+		return
+	}
+
 	user, ok := r.Context().Value(userCtx).(*entity.UserModel)
 	if !ok {
 		render.Status(r, http.StatusInternalServerError)
@@ -140,7 +146,32 @@ func (u *UserHandler) update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := u.userUsecase.UpdateUser(user, &r.PostForm)
+	// Check role
+	if loggedUser.ID != user.ID &&
+		(loggedUser.Role != "ROLE_ROOT" || loggedUser.Role != "ROLE_SUPPORT" || loggedUser.Role != "ROLE_ADMIN") {
+		render.Status(r, http.StatusForbidden)
+		render.JSON(w, r, &utils.ResponseModel{Message: http.StatusText(http.StatusForbidden)})
+		return
+	}
+
+	payload := new(entity.UserPayload)
+	payload.Name = r.FormValue("name")
+	payload.Surname = r.FormValue("surname")
+	payload.Birth = r.FormValue("birth")
+	payload.Username = r.FormValue("username")
+	payload.Password = r.FormValue("password")
+	payload.Image = r.FormValue("image")
+	payload.Role = r.FormValue("role")
+	payload.Active = r.FormValue("active")
+
+	err := payload.Validate()
+	if err != nil {
+		render.Status(r, http.StatusBadRequest)
+		render.JSON(w, r, &utils.ResponseModel{Message: "Missing fields to update"})
+		return
+	}
+
+	err = u.userUsecase.UpdateUser(user, payload)
 	if err != nil {
 		render.Status(r, http.StatusBadRequest)
 		render.JSON(w, r, &utils.ResponseModel{Message: err.Error()})

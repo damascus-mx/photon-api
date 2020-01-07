@@ -3,12 +3,10 @@ package usecase
 import (
 	"errors"
 	"fmt"
-	"net/url"
 	"time"
 
 	config "github.com/damascus-mx/photon-api/src/core/config"
 	core "github.com/damascus-mx/photon-api/src/core/helper"
-	helper "github.com/damascus-mx/photon-api/src/core/helper"
 	entity "github.com/damascus-mx/photon-api/src/entity"
 )
 
@@ -61,7 +59,7 @@ func (u *UserUsecase) CreateUser(name, surname, username, password, birth string
 	}
 
 	// Encrypt password and store the retrieved hash
-	hash64, err := helper.HashString(user.Password)
+	hash64, err := core.HashString(user.Password)
 	if err != nil {
 		return 0, err
 	}
@@ -87,24 +85,19 @@ func (u *UserUsecase) DeleteUser(id int64) error {
 }
 
 // UpdateUser Update given user row
-func (u *UserUsecase) UpdateUser(user *entity.UserModel, payload *url.Values) error {
+func (u *UserUsecase) UpdateUser(user *entity.UserModel, payload *entity.UserPayload) error {
 	// Convert birth
-	if birth := payload.Get("birth"); birth != "" {
-		birthFormatted, err := time.Parse(config.MonthDayYear, birth)
-		if err != nil {
-			return err
-		}
-		user.Birth = birthFormatted
+	if payload.Birth != "" {
+		user.SetBirth(payload.Birth)
 	}
 
 	// Hash password
-	if password := payload.Get("password"); password != "" {
-
-		if len(password) < 8 {
+	if payload.Password != "" {
+		if len(payload.Password) < 8 {
 			return errors.New("Password must be 8-digit long")
 		}
 
-		hash64, err := helper.HashString(password)
+		hash64, err := core.HashString(payload.Password)
 		if err != nil {
 			return err
 		}
@@ -113,19 +106,26 @@ func (u *UserUsecase) UpdateUser(user *entity.UserModel, payload *url.Values) er
 	}
 
 	// Set role
-	if payloadRole := payload.Get("role"); payloadRole != "" {
-		isValid := false
+	if payload.Role != "" {
+		user.SetRole(payload.Role)
+	}
 
-		for _, role := range entity.UserRoles {
-			if payloadRole == role {
-				isValid = true
-				break
-			}
-		}
+	// Set user status
+	if payload.Active != "" {
+		user.SetActive(payload.Active)
+	}
 
-		if !isValid {
-			return errors.New("User role is not valid")
-		}
+	if payload.Username != "" {
+		user.Username = payload.Username
+	}
+	if payload.Surname != "" {
+		user.Surname = payload.Surname
+	}
+	if payload.Name != "" {
+		user.Name = payload.Name
+	}
+	if payload.Image != "" {
+		user.Image = &payload.Image
 	}
 
 	user.UpdatedAt = time.Now()
@@ -134,6 +134,8 @@ func (u *UserUsecase) UpdateUser(user *entity.UserModel, payload *url.Values) er
 	if err != nil {
 		return err
 	}
+
+	u.userRepository.Update(user)
 
 	return nil
 }
@@ -149,7 +151,7 @@ func (u *UserUsecase) AuthenticateUser(username, password string) (string, error
 		return "", err
 	}
 
-	ok, err := helper.CompareString(password, user.Password)
+	ok, err := core.CompareString(password, user.Password)
 	fmt.Printf("\nCorrect Password: %t", ok)
 	if err != nil {
 		return "", err

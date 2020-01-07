@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"time"
 
-	entity "github.com/damascus-mx/photon-api/src/entity"
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/damascus-mx/photon-api/src/entity"
+	"github.com/dgrijalva/jwt-go"
 )
 
 // JWTSecret JWT Secret key
