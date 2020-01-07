@@ -12,6 +12,8 @@ type PaginateParams struct {
 	Limit int64
 }
 
+type key int
+
 const (
 	// ParamCtx param context index
 	ParamCtx key = iota
@@ -37,7 +39,6 @@ func PaginateHandler(next http.Handler) http.Handler {
 		// Where x = limit and n = page
 		index := (limit * page) - limit
 
-		r.URL.Query().Set("limit", strconv.FormatInt(limit, 10))
 		ctx := context.WithValue(r.Context(), ParamCtx, &PaginateParams{index, limit})
 
 		next.ServeHTTP(w, r.WithContext(ctx))

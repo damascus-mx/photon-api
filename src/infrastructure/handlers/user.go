@@ -48,14 +48,14 @@ func NewUserHandler(userCase UserUsecase) *UserHandler {
 // Routes Exports all routes
 func (u *UserHandler) Routes() *chi.Mux {
 	router := chi.NewRouter()
-	router.With(md.PaginateHandler).Get("/", u.getAll)
 	router.Post("/", u.create)
 	router.Post("/authenticate", u.signIn)
+	router.With(md.AuthenticationHandler).With(md.PaginateHandler).Get("/", u.getAll)
 
 	router.Route("/{userID}", func(r chi.Router) {
 		r.With(md.AuthenticationHandler).With(u.userContext).Get("/", u.getByID)
-		r.Delete("/", u.delete)
-		r.With(u.userContext).Put("/", u.delete)
+		r.With(md.AuthenticationHandler).Delete("/", u.delete)
+		r.With(md.AuthenticationHandler).With(u.userContext).Put("/", u.update)
 	})
 
 	return router
@@ -131,6 +131,7 @@ func (u *UserHandler) delete(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, &utils.ResponseModel{Message: fmt.Sprintf("User %d successfully deleted", userID)})
 }
 
+// Update user
 func (u *UserHandler) update(w http.ResponseWriter, r *http.Request) {
 	user, ok := r.Context().Value(userCtx).(*entity.UserModel)
 	if !ok {
@@ -149,6 +150,7 @@ func (u *UserHandler) update(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, &utils.ResponseModel{Message: fmt.Sprintf("User %d successfully updated", user.ID)})
 }
 
+// Sign In
 func (u *UserHandler) signIn(w http.ResponseWriter, r *http.Request) {
 	username := r.FormValue("username")
 	password := r.FormValue("password")

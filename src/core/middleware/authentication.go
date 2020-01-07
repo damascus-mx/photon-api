@@ -13,12 +13,6 @@ import (
 	utils "github.com/damascus-mx/photon-api/src/core/util"
 )
 
-type key int
-
-const (
-	userCtx key = iota
-)
-
 // AuthenticationHandler Middleware to verify user credentials
 func AuthenticationHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -54,7 +48,7 @@ func AuthenticationHandler(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), userCtx, core.ParseUser(claims))
+		ctx := context.WithValue(r.Context(), "user", core.ParseUser(claims))
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
