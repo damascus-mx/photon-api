@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strconv"
 
-	md "github.com/damascus-mx/photon-api/src/core/middleware"
-	utils "github.com/damascus-mx/photon-api/src/core/util"
-	"github.com/damascus-mx/photon-api/src/entity"
+	md "github.com/damascus-mx/photon-api/users/core/middleware"
+	utils "github.com/damascus-mx/photon-api/users/core/util"
+	"github.com/damascus-mx/photon-api/users/entity"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 )

@@ -9,8 +9,8 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-chi/render"
 
-	core "github.com/damascus-mx/photon-api/src/core/helper"
-	utils "github.com/damascus-mx/photon-api/src/core/util"
+	core "github.com/damascus-mx/photon-api/users/core/helper"
+	utils "github.com/damascus-mx/photon-api/users/core/util"
 )
 
 // AuthenticationHandler Middleware to verify user credentials

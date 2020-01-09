@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/damascus-mx/photon-api/src/entity"
+	"github.com/damascus-mx/photon-api/users/entity"
 	"github.com/dgrijalva/jwt-go"
 )
 

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	config "github.com/damascus-mx/photon-api/src/core/config"
-	core "github.com/damascus-mx/photon-api/src/core/helper"
-	entity "github.com/damascus-mx/photon-api/src/entity"
+	config "github.com/damascus-mx/photon-api/users/core/config"
+	core "github.com/damascus-mx/photon-api/users/core/helper"
+	entity "github.com/damascus-mx/photon-api/users/entity"
 )
 
 // UserRepository Persistence user layer

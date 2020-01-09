@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/damascus-mx/photon-api/src/entity"
+	"github.com/damascus-mx/photon-api/users/entity"
 	_ "github.com/lib/pq"
 )
 

@@ -1,0 +1,42 @@
+version: "3.7"
+services:
+  #
+  # Microservices
+  #
+  users:
+    build: ./users
+    image: photon-api/users
+    ports: 
+      - "3001:8080"
+    labels: 
+      - "com.docker.aws.lb.arn=arn:aws:acm:us-east-1:824699638576:certificate/9b4b972d-7dde-4303-8423-11bcf08ab847"
+    depends_on: 
+      - postgres
+      - redis
+    env_file: 
+      - ./users/.env
+
+  #
+  # Infrastructure
+  #
+  redis:
+    image: redis
+    restart: always
+    ports: 
+      - "6379:6379"
+
+  postgres:
+    image: postgres
+    restart: always
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_DB=photon
+      - POSTGRES_USER=docker
+      - POSTGRES_PASSWORD=caca123
+    volumes: 
+      - ./data/root/photon.sql:/docker-entrypoint-initdb.d/10-photon.sql
+
+networks:
+  local:
+    name: local

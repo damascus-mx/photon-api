@@ -8,14 +8,14 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/joho/godotenv"
 
-	delivery "github.com/damascus-mx/photon-api/src/infrastructure/delivery/http"
-	services "github.com/damascus-mx/photon-api/src/infrastructure/services"
+	delivery "github.com/damascus-mx/photon-api/users/infrastructure/delivery/http"
+	services "github.com/damascus-mx/photon-api/users/infrastructure/services"
 )
 
 // InitApplication Creates a new router instance
 func InitApplication() *chi.Mux {
 	// Create new Router
-	fmt.Print("Running Photon REST Microservice\n")
+	fmt.Print("Running Photon REST USER Microservice\n")
 
 	// Load virtual environment
 	initEnvironment()

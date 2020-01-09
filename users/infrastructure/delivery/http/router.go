@@ -9,10 +9,10 @@ import (
 	"github.com/go-chi/render"
 	"github.com/go-redis/redis/v7"
 
-	config "github.com/damascus-mx/photon-api/src/core/config"
-	handler "github.com/damascus-mx/photon-api/src/infrastructure/handlers"
-	repository "github.com/damascus-mx/photon-api/src/infrastructure/repositories"
-	usecase "github.com/damascus-mx/photon-api/src/usecases"
+	config "github.com/damascus-mx/photon-api/users/core/config"
+	handler "github.com/damascus-mx/photon-api/users/infrastructure/handlers"
+	repository "github.com/damascus-mx/photon-api/users/infrastructure/repositories"
+	usecase "github.com/damascus-mx/photon-api/users/usecases"
 )
 
 // IRouter HTTP Router interface
