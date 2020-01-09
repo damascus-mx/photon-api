@@ -3,6 +3,12 @@ services:
   #
   # Microservices
   #
+  tasks:
+    build: ./tasks
+    image: photon-api/tasks
+    ports: 
+      - "3002:8080"
+
   users:
     build: ./users
     image: photon-api/users
@@ -36,7 +42,3 @@ services:
       - POSTGRES_PASSWORD=caca123
     volumes: 
       - ./data/root/photon.sql:/docker-entrypoint-initdb.d/10-photon.sql
-
-networks:
-  local:
-    name: local
