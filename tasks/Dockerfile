@@ -3,8 +3,14 @@
 # Start from the latest golang base image
 FROM golang:alpine as builder
 
+# ENV GO111MODULE=on
+
 # Add Maintainer Info
 LABEL maintainer="Alonso R <luis.alonso.16@hotmail.com>"
+
+# Install git.
+# Git is required for fetching the dependencies.
+RUN apk update && apk add --no-cache git
 
 # Set the Current Working Directory inside the container
 WORKDIR /go/src/github.com/damascus-mx/photon-api/tasks/

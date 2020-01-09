@@ -1,10 +1,16 @@
 # Dockerfile References: https://docs.docker.com/engine/reference/builder/
 
 # Start from the latest golang base image
-FROM golang:alpine as dev
+FROM golang:alpine as builder
+
+# ENV GO111MODULE=on
 
 # Add Maintainer Info
 LABEL maintainer="Alonso R <luis.alonso.16@hotmail.com>"
+
+# Install git.
+# Git is required for fetching the dependencies.
+RUN apk update && apk add --no-cache git
 
 # Set the Current Working Directory inside the container
 WORKDIR /go/src/github.com/damascus-mx/photon-api/users/
@@ -31,7 +37,8 @@ RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 
 # Copy the Pre-built binary file from the previous stage
-COPY --from=dev /go/src/github.com/damascus-mx/photon-api/users .
+COPY --from=builder /go/src/github.com/damascus-mx/photon-api/users .
+COPY --from=builder /go/src/github.com/damascus-mx/photon-api/users/.env .    
 
 # Expose port 8080 to the outside world
 EXPOSE 8080
