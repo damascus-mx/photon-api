@@ -35,6 +35,10 @@ Since **Photon** is using Go Modules for package management, the following depen
 * Go 1.13
 * PostgreSQL 12
 * Redis 5.0.7
+* RabbitMQ 3.7.23
+* Docker 19.03
+* Docker Compose 1.24
+* Kubernetes (Kubectl) 1.14
 
 ## Architecture
 **Photon** API's architecture is completely based on unclebob's clean architecture concept and is also using some concepts from bxcodec's Golang's clean architecture like Delivery layer.
