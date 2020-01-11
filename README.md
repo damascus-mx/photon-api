@@ -26,7 +26,7 @@ The **Photon** platform is currently subdivided into 4 modules:
 
 The API is not completely attached to the HTTP Protocol, it also uses Websockets and MQ Brokers for every need.
 
-See this [reference](https://github.com/damascus-mx/photon-api) to see all the exposed resources.
+See this [reference](https://github.com/damascus-mx/photon-api/blob/master/docs/api.md) to look all the exposed resources.
 
 ## API Dependencies
 Since **Photon** is using Go Modules for package management, the following dependencies are related to environment requirements.
