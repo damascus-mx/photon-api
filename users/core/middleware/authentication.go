@@ -2,7 +2,6 @@ package core
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -35,10 +34,8 @@ func AuthenticationHandler(next http.Handler) http.Handler {
 				return
 			}
 
-			fmt.Printf("\nError: %s", err.Error())
-
 			render.Status(r, http.StatusBadRequest)
-			render.JSON(w, r, &utils.ResponseModel{Message: http.StatusText(http.StatusBadRequest)})
+			render.JSON(w, r, &utils.ResponseModel{Message: "Invalid Token"})
 			return
 		}
 
