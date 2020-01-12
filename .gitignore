@@ -16,3 +16,6 @@
 
 # Enviroment variables
 .env
+
+# OSX files
+.DS_Store
