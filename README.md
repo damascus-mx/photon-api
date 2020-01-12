@@ -26,7 +26,7 @@ The **Photon** platform is currently subdivided into 4 modules:
 
 The API is not completely attached to the HTTP Protocol, it also uses Websockets and MQ Brokers for every need.
 
-See the GODOC reference to see all the exposed resources -aka URIs-.
+See this [reference](https://github.com/damascus-mx/photon-api/blob/master/docs/api.md) to look all the exposed resources.
 
 ## API Dependencies
 Since **Photon** is using Go Modules for package management, the following dependencies are related to environment requirements.
@@ -35,6 +35,10 @@ Since **Photon** is using Go Modules for package management, the following depen
 * Go 1.13
 * PostgreSQL 12
 * Redis 5.0.7
+* RabbitMQ 3.7.23
+* Docker 19.03
+* Docker Compose 1.24
+* Kubernetes (Kubectl) 1.14
 
 ## Architecture
 **Photon** API's architecture is completely based on unclebob's clean architecture concept and is also using some concepts from bxcodec's Golang's clean architecture like Delivery layer.
@@ -74,6 +78,7 @@ It is recommended to use AWS infrastructure using the following services:
 * _EC2_.- Server instance service on the cloud, runs **Photon**'s API binaries.
 * _RDS_.- Main Persistence layer, Relational Database instance service using PostgreSQL.
 * _ElastiCache_.- In-Memory persistence layer, uses Redis.
+* _SQS/RabbitMQ_.- Queue broker, transfer data between microservices with Event-Driven architecture.
 * _Lambda_.- Cloud functions, triggers before and after a request -HTTP requests mostly-.
 * Other
 

@@ -73,7 +73,7 @@ func (u *UserModel) Validate() error {
 func (u *UserPayload) Validate() error {
 	if u.Name == "" && u.Surname == "" && u.Birth == "" && u.Username == "" && u.Password == "" &&
 		u.Image == "" && u.Role == "" && u.Active == "" {
-		return errors.New("UserPayload is not valid")
+		return errors.New("User Payload is not valid")
 	}
 
 	return nil

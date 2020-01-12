@@ -4,18 +4,20 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
 
-	md "github.com/damascus-mx/photon-api/src/core/middleware"
-	utils "github.com/damascus-mx/photon-api/src/core/util"
-	"github.com/damascus-mx/photon-api/src/entity"
+	md "github.com/damascus-mx/photon-api/users/core/middleware"
+	utils "github.com/damascus-mx/photon-api/users/core/util"
+	"github.com/damascus-mx/photon-api/users/entity"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 )
 
 // UserUsecase User usecase interface
 type UserUsecase interface {
-	CreateUser(name, surname, username, password, birth string) (int, error)
+	CreateUser(name, surname, username, password, birth, role string) (int, error)
 	GetAllUsers(limit, index int64) ([]*entity.UserModel, error)
 	GetUserByID(id int64) (*entity.UserModel, error)
 	DeleteUser(id int64) error
@@ -48,7 +50,7 @@ func NewUserHandler(userCase UserUsecase) *UserHandler {
 func (u *UserHandler) Routes() *chi.Mux {
 	router := chi.NewRouter()
 	router.Post("/", u.create)
-	router.Post("/authenticate", u.signIn)
+	router.Post("/authorize", u.signIn)
 	router.With(md.AuthenticationHandler).With(md.PaginateHandler).Get("/", u.getAll)
 
 	router.Route("/{userID}", func(r chi.Router) {
@@ -64,9 +66,28 @@ func (u *UserHandler) Routes() *chi.Mux {
 
 // Create user
 func (u *UserHandler) create(w http.ResponseWriter, r *http.Request) {
+	// Check role
+	var role string
+
+	if role = strings.ToUpper(r.FormValue("role")); role != "" {
+		switch role {
+		case "ROLE_ROOT", "ROLE_SUPPORT":
+			if secret := r.URL.Query().Get("secret"); secret == "" || secret != os.Getenv("PHOTON_SECRET") {
+				render.Status(r, http.StatusForbidden)
+				render.JSON(w, r, &utils.ResponseModel{Message: http.StatusText(http.StatusForbidden)})
+				return
+			}
+		default:
+			role = "ROLE_STUDENT"
+			break
+		}
+	} else {
+		role = "ROLE_STUDENT"
+	}
+
 	// Save user
 	userID, err := u.userUsecase.CreateUser(r.FormValue("name"), r.FormValue("surname"), r.FormValue("username"),
-		r.FormValue("password"), r.FormValue("birth"))
+		r.FormValue("password"), r.FormValue("birth"), role)
 	if err != nil {
 		render.Status(r, http.StatusBadRequest)
 		render.JSON(w, r, &utils.ResponseModel{Message: err.Error()})

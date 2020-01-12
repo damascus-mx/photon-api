@@ -2,15 +2,14 @@ package core
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-chi/render"
 
-	core "github.com/damascus-mx/photon-api/src/core/helper"
-	utils "github.com/damascus-mx/photon-api/src/core/util"
+	core "github.com/damascus-mx/photon-api/users/core/helper"
+	utils "github.com/damascus-mx/photon-api/users/core/util"
 )
 
 // AuthenticationHandler Middleware to verify user credentials
@@ -35,10 +34,8 @@ func AuthenticationHandler(next http.Handler) http.Handler {
 				return
 			}
 
-			fmt.Printf("\nError: %s", err.Error())
-
 			render.Status(r, http.StatusBadRequest)
-			render.JSON(w, r, &utils.ResponseModel{Message: http.StatusText(http.StatusBadRequest)})
+			render.JSON(w, r, &utils.ResponseModel{Message: "Invalid Token"})
 			return
 		}
 

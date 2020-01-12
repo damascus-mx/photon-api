@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	config "github.com/damascus-mx/photon-api/src/core/config"
-	core "github.com/damascus-mx/photon-api/src/core/helper"
-	entity "github.com/damascus-mx/photon-api/src/entity"
+	config "github.com/damascus-mx/photon-api/users/core/config"
+	core "github.com/damascus-mx/photon-api/users/core/helper"
+	entity "github.com/damascus-mx/photon-api/users/entity"
 )
 
 // UserRepository Persistence user layer
@@ -33,7 +33,7 @@ func NewUserUsecase(userRepository UserRepository) *UserUsecase {
 // ---- USER OPERATIONS ----
 
 // CreateUser Save a new user
-func (u *UserUsecase) CreateUser(name, surname, username, password, birth string) (int, error) {
+func (u *UserUsecase) CreateUser(name, surname, username, password, birth, role string) (int, error) {
 	if len(password) < 8 {
 		return 0, errors.New("Password must be 8-digit long")
 	}
@@ -51,6 +51,7 @@ func (u *UserUsecase) CreateUser(name, surname, username, password, birth string
 	user.Birth = birthFormatted
 	user.Username = username
 	user.Password = password
+	user.Role = role
 
 	// Verify user state
 	err = user.Validate()
