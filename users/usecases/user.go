@@ -33,7 +33,7 @@ func NewUserUsecase(userRepository UserRepository) *UserUsecase {
 // ---- USER OPERATIONS ----
 
 // CreateUser Save a new user
-func (u *UserUsecase) CreateUser(name, surname, username, password, birth string) (int, error) {
+func (u *UserUsecase) CreateUser(name, surname, username, password, birth, role string) (int, error) {
 	if len(password) < 8 {
 		return 0, errors.New("Password must be 8-digit long")
 	}
@@ -51,6 +51,7 @@ func (u *UserUsecase) CreateUser(name, surname, username, password, birth string
 	user.Birth = birthFormatted
 	user.Username = username
 	user.Password = password
+	user.Role = role
 
 	// Verify user state
 	err = user.Validate()

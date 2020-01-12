@@ -24,10 +24,10 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 // Save Inserts user into persistence layer
 func (u *UserRepository) Save(user *entity.UserModel) (int, error) {
 	// Store new object into DB
-	statement := `INSERT INTO users (name, surname, birth, username, password) VALUES ($1, $2, $3, $4, $5)
+	statement := `INSERT INTO users (name, surname, birth, username, password, role) VALUES ($1, $2, $3, $4, $5)
 	RETURNING id`
 	id := 0
-	err := u.DB.QueryRow(statement, user.Name, user.Surname, user.Birth, user.Username, user.Password).Scan(&id)
+	err := u.DB.QueryRow(statement, user.Name, user.Surname, user.Birth, user.Username, user.Password, user.Role).Scan(&id)
 	if err != nil {
 		return 0, err
 	} else if id == 0 {
