@@ -57,6 +57,6 @@ func (r *Router) InitializeRouter(router *chi.Mux) *chi.Mux {
 // SetRoutes Mounts resources into the given router
 func (r *Router) SetRoutes(router *chi.Mux) {
 	router.Route("/v1", func(routerChi chi.Router) {
-		routerChi.Mount("/user", handler.NewUserHandler(usecase.NewUserUsecase(repository.NewUserRepository(r.DB))).Routes())
+		routerChi.Mount("/user", handler.NewUserHandler(usecase.NewUserUsecase(repository.NewUserRepository(r.DB, r.Redis))).Routes())
 	})
 }

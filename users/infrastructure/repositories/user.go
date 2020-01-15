@@ -2,21 +2,27 @@ package infrastructure
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/damascus-mx/photon-api/users/entity"
+	"github.com/go-redis/redis/v7"
+
+	// PSQL Driver
 	_ "github.com/lib/pq"
 )
 
 // UserRepository Handles all persistence user operations
 type UserRepository struct {
-	DB *sql.DB
+	DB    *sql.DB
+	Redis *redis.Client
 }
 
 // NewUserRepository Returns user repository instance
-func NewUserRepository(db *sql.DB) *UserRepository {
-	return &UserRepository{db}
+func NewUserRepository(db *sql.DB, redis *redis.Client) *UserRepository {
+	return &UserRepository{db, redis}
 }
 
 // ---- USER OPERATIONS ----
@@ -39,13 +45,42 @@ func (u *UserRepository) Save(user *entity.UserModel) (int, error) {
 
 // FetchByID Get user by ID
 func (u *UserRepository) FetchByID(id int64) (*entity.UserModel, error) {
-	statement := `SELECT * FROM users WHERE id = $1`
+	// Check cache first, Cache Aside -lazy- pattern
+	conn := u.Redis.Conn()
+	defer conn.Close()
+
 	user := new(entity.UserModel)
-	err := u.DB.QueryRow(statement, id).Scan(&user.ID, &user.Name, &user.Surname, &user.Birth, &user.Username, &user.Password, &user.Image,
-		&user.Role, &user.Active, &user.CreatedAt, &user.UpdatedAt)
-	if err != nil {
-		return nil, err
+	usrJSON, err := conn.Get(fmt.Sprintf("user:%d", id)).Result()
+
+	if err != nil || usrJSON == "" {
+		// Read DB
+		statement := `SELECT * FROM users WHERE id = $1`
+
+		err = u.DB.QueryRow(statement, id).Scan(&user.ID, &user.Name, &user.Surname, &user.Birth, &user.Username, &user.Password, &user.Image,
+			&user.Role, &user.Active, &user.CreatedAt, &user.UpdatedAt)
+		if err != nil {
+			return nil, err
+		}
+
+		// Store data in-memory cache, expires in 2 weeks
+		json, err := json.Marshal(user)
+		if err != nil {
+			return nil, err
+		}
+
+		err = conn.Set(fmt.Sprintf("user:%d", id), json, (time.Hour * time.Duration(336))).Err()
+		if err != nil {
+			return nil, err
+		}
+
+		return user, nil
 	}
+
+	err = json.Unmarshal([]byte(usrJSON), &user)
+	if err != nil {
+		return nil, errors.New("Corrupted cache")
+	}
+	fmt.Printf("\nUser in redis: %v\n", user)
 
 	return user, nil
 }
@@ -111,4 +146,16 @@ func (u *UserRepository) FetchByUsername(username string) (*entity.UserModel, er
 	}
 
 	return user, nil
+}
+
+// GetPasswordHash Get a password hashed by username
+func (u *UserRepository) GetPasswordHash(username string) (string, error) {
+	statement := `SELECT password FROM users WHERE username = $1`
+	hash := ""
+	err := u.DB.QueryRow(statement, username).Scan(&hash)
+	if err != nil {
+		return "", err
+	}
+
+	return hash, nil
 }

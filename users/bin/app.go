@@ -8,6 +8,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/joho/godotenv"
 
+	core "github.com/damascus-mx/photon-api/users/core/util"
 	delivery "github.com/damascus-mx/photon-api/users/infrastructure/delivery/http"
 	services "github.com/damascus-mx/photon-api/users/infrastructure/services"
 )
@@ -21,15 +22,25 @@ func InitApplication() *chi.Mux {
 	initEnvironment()
 
 	// ---> LOAD REQUIRED SERVICES <---
+	// Load MQ client
+	// mq := services.InitMQ(os.Getenv("MQ_CONNECTION"))
+	/*q, err := mqChan.QueueDeclare(
+		"ping",
+		false,
+		true,
+		false,
+		false,
+		nil,
+	)
+	core.FailOnError("Failed to create new queue", err)*/
+
 	// Load Redis client
 	redis := services.InitRedis(os.Getenv("REDIS_CONNECTION"), os.Getenv("REDIS_PASSWORD"))
 	fmt.Print(redis.ClientID().String())
 
 	// Load main postgres DB pool
 	db, err := services.ConnectPool(os.Getenv("DB_CONNECTION"))
-	if err != nil {
-		log.Fatal(err)
-	}
+	core.FailOnError("Failed to connect Database", err)
 
 	// Start router
 	var router delivery.IRouter = delivery.NewHTTPRouter(db, redis)
