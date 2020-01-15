@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"github.com/damascus-mx/photon-api/users/entity"
@@ -117,6 +118,13 @@ func (u *UserRepository) Delete(id int64) error {
 	if err != nil {
 		return err
 	}
+	// If deleted, invalidate key in cache layer
+	conn := u.Redis.Conn()
+	defer conn.Close()
+	err = conn.Del(fmt.Sprintf("user:%d", id)).Err()
+	if err != nil {
+		log.Println("REDIS: Key not found")
+	}
 
 	return nil
 }
@@ -131,13 +139,21 @@ func (u *UserRepository) Update(user *entity.UserModel) error {
 	if err != nil {
 		return err
 	}
+	// If updated, apply write-through cache pattern
+	conn := u.Redis.Conn()
+	defer conn.Close()
+	json, err := json.Marshal(user)
+	err = conn.Set(fmt.Sprintf("user:%d", user.ID), json, (time.Hour * time.Duration(336))).Err()
+	if err != nil {
+		log.Println("REDIS: Key not found")
+	}
 
 	return nil
 }
 
 // FetchByUsername Retrieves a user by username
 func (u *UserRepository) FetchByUsername(username string) (*entity.UserModel, error) {
-	statement := `SELECT * FROM users WHERE username = $1`
+	statement := `SELECT * FROM users WHERE username = $1 LIMIT 1`
 	user := new(entity.UserModel)
 	err := u.DB.QueryRow(statement, username).Scan(&user.ID, &user.Name, &user.Surname, &user.Birth, &user.Username, &user.Password, &user.Image,
 		&user.Role, &user.Active, &user.CreatedAt, &user.UpdatedAt)
@@ -149,10 +165,10 @@ func (u *UserRepository) FetchByUsername(username string) (*entity.UserModel, er
 }
 
 // GetPasswordHash Get a password hashed by username
-func (u *UserRepository) GetPasswordHash(username string) (string, error) {
-	statement := `SELECT password FROM users WHERE username = $1`
+func (u *UserRepository) GetPasswordHash(id int64) (string, error) {
+	statement := `SELECT password FROM users WHERE id = $1`
 	hash := ""
-	err := u.DB.QueryRow(statement, username).Scan(&hash)
+	err := u.DB.QueryRow(statement, id).Scan(&hash)
 	if err != nil {
 		return "", err
 	}
