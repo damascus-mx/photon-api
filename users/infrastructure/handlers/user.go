@@ -173,8 +173,19 @@ func (u *UserHandler) update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check role
-	if loggedUser.ID != user.ID &&
-		(loggedUser.Role != "ROLE_ROOT" || loggedUser.Role != "ROLE_SUPPORT" || loggedUser.Role != "ROLE_ADMIN") {
+	switch {
+	// Trying to update root user without root account
+	case user.Role == "ROLE_ROOT" && loggedUser.Role != "ROLE_ROOT":
+		render.Status(r, http.StatusForbidden)
+		render.JSON(w, r, &utils.ResponseModel{Message: http.StatusText(http.StatusForbidden)})
+		return
+	// Trying to update support user without root account
+	case loggedUser.ID != user.ID && user.Role == "ROLE_SUPPORT" && loggedUser.Role != "ROLE_ROOT":
+		render.Status(r, http.StatusForbidden)
+		render.JSON(w, r, &utils.ResponseModel{Message: http.StatusText(http.StatusForbidden)})
+		return
+	// Trying to update someone else account without root/support account
+	case loggedUser.ID != user.ID && user.Role != "ROLE_ROOT" && (loggedUser.Role != "ROLE_ROOT" || loggedUser.Role != "ROLE_SUPPORT"):
 		render.Status(r, http.StatusForbidden)
 		render.JSON(w, r, &utils.ResponseModel{Message: http.StatusText(http.StatusForbidden)})
 		return
