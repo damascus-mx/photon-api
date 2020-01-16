@@ -13,6 +13,7 @@ const (
 func main() {
 	// Get Bootstrapper
 	bootstrap := new(bin.Bootstrapper)
+	bootstrap.StartServices()
 	// Init HTTP Server
 	err := http.ListenAndServe(port, bootstrap.StartHTTP())
 	if err != nil {

@@ -16,7 +16,10 @@ type HTTPRouter struct {
 	redis *redis.Client
 }
 
-func (r *HTTPRouter) NewRouter() *chi.Mux {
+func (r *HTTPRouter) NewRouter(database *sql.DB, redisClient *redis.Client) *chi.Mux {
+	r.DB = database
+	r.redis = redisClient
+
 	router := chi.NewRouter()
 
 	router.Route("/v1", func(routerChi chi.Router) {
