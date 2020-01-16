@@ -31,7 +31,7 @@ func NewUserRepository(db *sql.DB, redis *redis.Client) *UserRepository {
 // Save Inserts user into persistence layer
 func (u *UserRepository) Save(user *entity.UserModel) (int, error) {
 	// Store new object into DB
-	statement := `INSERT INTO users (name, surname, birth, username, password, role) VALUES ($1, $2, $3, $4, $5)
+	statement := `INSERT INTO users (name, surname, birth, username, password, role) VALUES ($1, $2, $3, $4, $5, $6)
 	RETURNING id`
 	id := 0
 	err := u.DB.QueryRow(statement, user.Name, user.Surname, user.Birth, user.Username, user.Password, user.Role).Scan(&id)
