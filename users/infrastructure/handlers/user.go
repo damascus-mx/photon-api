@@ -23,6 +23,7 @@ type UserUsecase interface {
 	DeleteUser(id int64) error
 	UpdateUser(user *entity.UserModel, payload *entity.UserPayload) error
 	AuthenticateUser(username, password string) (string, error)
+	GetUserByUsername(username string) (*entity.UserModel, error)
 }
 
 // UserHandler HTTP Handler for user
@@ -57,6 +58,10 @@ func (u *UserHandler) Routes() *chi.Mux {
 		r.With(md.AuthenticationHandler).With(u.userContext).Get("/", u.getByID)
 		r.With(md.AuthenticationHandler).Delete("/", u.delete)
 		r.With(md.AuthenticationHandler).With(u.userContext).Put("/", u.update)
+	})
+
+	router.Route("/username/{username}", func(r chi.Router) {
+		r.With(md.AuthenticationHandler).Get("/", u.getByUsername)
 	})
 
 	return router
@@ -215,6 +220,24 @@ func (u *UserHandler) signIn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.JSON(w, r, &tknResponse{Token: token})
+}
+
+func (u *UserHandler) getByUsername(w http.ResponseWriter, r *http.Request) {
+	username := chi.URLParam(r, "username")
+	if username == "" {
+		render.Status(r, http.StatusBadRequest)
+		render.JSON(w, r, &utils.ResponseModel{Message: "This resources requires a username"})
+		return
+	}
+
+	user, err := u.userUsecase.GetUserByUsername(username)
+	if err != nil {
+		render.Status(r, http.StatusNotFound)
+		render.JSON(w, r, &utils.ResponseModel{Message: "User not found"})
+		return
+	}
+
+	render.JSON(w, r, user)
 }
 
 // --> USER CONTEXT <--

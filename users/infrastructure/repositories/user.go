@@ -63,13 +63,13 @@ func (u *UserRepository) FetchByID(id int64) (*entity.UserModel, error) {
 			return nil, err
 		}
 
-		// Store data in-memory cache, expires in 2 weeks
+		// Store data in-memory cache, expires in 24 hours
 		json, err := json.Marshal(user)
 		if err != nil {
 			return nil, err
 		}
 
-		err = conn.Set(fmt.Sprintf("user:%d", id), json, (time.Hour * time.Duration(336))).Err()
+		err = conn.Set(fmt.Sprintf("user:%d", id), json, (time.Hour * time.Duration(24))).Err()
 		if err != nil {
 			return nil, err
 		}
@@ -118,13 +118,16 @@ func (u *UserRepository) Delete(id int64) error {
 	if err != nil {
 		return err
 	}
-	// If deleted, invalidate key in cache layer
-	conn := u.Redis.Conn()
-	defer conn.Close()
-	err = conn.Del(fmt.Sprintf("user:%d", id)).Err()
-	if err != nil {
-		log.Println("REDIS: Key not found")
-	}
+	go func() {
+		// If deleted, invalidate key in cache layer
+		conn := u.Redis.Conn()
+		defer conn.Close()
+		err = conn.Del(fmt.Sprintf("user:%d", id)).Err()
+		if err != nil {
+			log.Println("REDIS: Key not found")
+		}
+
+	}()
 
 	return nil
 }
@@ -139,14 +142,16 @@ func (u *UserRepository) Update(user *entity.UserModel) error {
 	if err != nil {
 		return err
 	}
-	// If updated, apply write-through cache pattern
-	conn := u.Redis.Conn()
-	defer conn.Close()
-	json, err := json.Marshal(user)
-	err = conn.Set(fmt.Sprintf("user:%d", user.ID), json, (time.Hour * time.Duration(336))).Err()
-	if err != nil {
-		log.Println("REDIS: Key not found")
-	}
+	go func() {
+		// If updated, apply write-through cache pattern
+		conn := u.Redis.Conn()
+		defer conn.Close()
+		json, err := json.Marshal(user)
+		err = conn.Set(fmt.Sprintf("user:%d", user.ID), json, (time.Hour * time.Duration(24))).Err()
+		if err != nil {
+			log.Println("REDIS: Key not found")
+		}
+	}()
 
 	return nil
 }
@@ -161,17 +166,57 @@ func (u *UserRepository) FetchByUsername(username string) (*entity.UserModel, er
 		return nil, err
 	}
 
+	go func() {
+		conn := u.Redis.Conn()
+		defer conn.Close()
+		var cursor uint64
+		var keys []string
+
+		keys, cursor, err := conn.Scan(cursor, username, 1).Result()
+		if err != nil {
+			log.Fatalf(err.Error())
+		}
+
+		for _, key := range keys {
+			fmt.Printf("%s", key)
+			err = json.Unmarshal([]byte(key), &user)
+			if err != nil {
+				log.Fatalf(err.Error())
+			}
+			fmt.Printf("%v", user)
+		}
+	}()
+
 	return user, nil
 }
 
 // GetPasswordHash Get a password hashed by username
 func (u *UserRepository) GetPasswordHash(id int64) (string, error) {
-	statement := `SELECT password FROM users WHERE id = $1`
+	// Verify cache
+	conn := u.Redis.Conn()
+	defer conn.Close()
+
+	user := new(entity.UserModel)
 	hash := ""
-	err := u.DB.QueryRow(statement, id).Scan(&hash)
-	if err != nil {
-		return "", err
+
+	marshalled, err := conn.Get(fmt.Sprintf("user:%d", id)).Result()
+	if err != nil || marshalled != "" {
+		// Read from DB
+		statement := `SELECT password FROM users WHERE id = $1`
+		err = u.DB.QueryRow(statement, id).Scan(&hash)
+		if err != nil {
+			return "", err
+		}
+
+		return hash, nil
 	}
+
+	err = json.Unmarshal([]byte(marshalled), &user)
+	if err != nil {
+		return "", errors.New("Cache corrupted")
+	}
+
+	hash = user.Password
 
 	return hash, nil
 }

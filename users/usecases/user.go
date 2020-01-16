@@ -169,3 +169,13 @@ func (u *UserUsecase) AuthenticateUser(username, password string) (string, error
 
 	return token, nil
 }
+
+// GetUserByUsername Get a user by username
+func (u *UserUsecase) GetUserByUsername(username string) (*entity.UserModel, error) {
+	user, err := u.userRepository.FetchByUsername(username)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
