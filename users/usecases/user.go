@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	config "github.com/damascus-mx/photon-api/users/core/config"
@@ -153,7 +152,6 @@ func (u *UserUsecase) AuthenticateUser(username, password string) (string, error
 	}
 
 	ok, err := core.CompareString(password, user.Password)
-	fmt.Printf("\nCorrect Password: %t", ok)
 	if err != nil {
 		return "", err
 	} else if !ok {

@@ -176,6 +176,8 @@ func (u *UserRepository) FetchByUsername(username string) (*entity.UserModel, er
 		if err != nil {
 			log.Fatalf(err.Error())
 		}
+		fmt.Printf("\nCursor: %d\n", cursor)
+		fmt.Printf("\nKey: %s\n", keys)
 
 		for _, key := range keys {
 			fmt.Printf("%s", key)
