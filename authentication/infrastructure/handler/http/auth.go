@@ -1,11 +1,12 @@
 package handler
 
 import (
-	"github.com/damascus-mx/photon-api/authentication/common/helper"
+	"net/http"
+
 	"github.com/damascus-mx/photon-api/authentication/common/util"
+	"github.com/damascus-mx/photon-api/authentication/entity"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
-	"net/http"
 )
 
 type tokenResponse struct {
@@ -13,7 +14,7 @@ type tokenResponse struct {
 }
 
 type authUsecase interface {
-	VerifyBearer(bearer string) (int, *helper.Claims, error)
+	VerifyBearer(bearer string) (int, *entity.UserModel, error)
 	Authenticate(username, password string) (string, error)
 }
 
@@ -27,21 +28,21 @@ type AuthHandler struct {
 	authUsecase authUsecase
 }
 
-// Router Export all routes
+// Routes Export all routes
 func (a *AuthHandler) Routes() *chi.Mux {
 	router := chi.NewRouter()
 
-	router.Get("/bearer/{token}", a.verifyBearer)
+	router.Post("/bearer", a.verifyBearer)
 	router.Post("/authorize", a.signIn)
 	return router
 }
 
 func (a *AuthHandler) verifyBearer(w http.ResponseWriter, r *http.Request) {
-	if bearer := chi.URLParam(r, "token"); bearer != "" {
-		status, claims, err := a.authUsecase.VerifyBearer(bearer)
+	if bearer := r.FormValue("token"); bearer != "" {
+		status, user, err := a.authUsecase.VerifyBearer(bearer)
 		switch {
 		case err == nil && status == 200:
-			render.JSON(w, r, claims)
+			render.JSON(w, r, user)
 			return
 		case err != nil && status == http.StatusBadRequest:
 			render.Status(r, http.StatusBadRequest)

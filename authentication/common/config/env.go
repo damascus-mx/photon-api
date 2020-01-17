@@ -1,6 +1,7 @@
 package env
 
 import (
+	"log"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -28,4 +29,6 @@ func StartEnvironment() {
 	PHOTON_SECRET = os.Getenv("PHOTON_SECRET")
 	REDIS_CONNECTION = os.Getenv("REDIS_CONNECTION")
 	REDIS_PASSWORD = os.Getenv("REDIS_PASSWORD")
+
+	log.Println("ENVIRONMENT: Environment started ...")
 }

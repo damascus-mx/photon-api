@@ -26,12 +26,13 @@ type AuthUsecase struct {
 	userRepository userRepository
 }
 
+// NewAuthUsecase Create Authentication use case
 func NewAuthUsecase(aRepository authRepository, usRepository userRepository) *AuthUsecase {
 	return &AuthUsecase{authRepository: aRepository, userRepository: usRepository}
 }
 
 // VerifyBearer Return if a Bearer is valid or not
-func (a *AuthUsecase) VerifyBearer(bearer string) (int, *helper.Claims, error) {
+func (a *AuthUsecase) VerifyBearer(bearer string) (int, *entity.UserModel, error) {
 	if bearerString := strings.Split(bearer, " ")[0]; bearerString != "Bearer" {
 		return http.StatusBadRequest, nil, errors.New("Invalid Bearer Token")
 	}
@@ -54,7 +55,7 @@ func (a *AuthUsecase) VerifyBearer(bearer string) (int, *helper.Claims, error) {
 		return http.StatusUnauthorized, nil, errors.New("Invalid token")
 	}
 
-	return 200, claims, nil
+	return 200, helper.ParseUser(claims), nil
 }
 
 // Authenticate Verify a user

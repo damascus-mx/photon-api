@@ -13,17 +13,19 @@ import (
 // HTTPRouter HTTP Router
 type HTTPRouter struct {
 	DB    *sql.DB
-	redis *redis.Client
+	Cache *redis.Client
 }
 
+// NewRouter Create new HTTP Router
 func (r *HTTPRouter) NewRouter(database *sql.DB, redisClient *redis.Client) *chi.Mux {
 	r.DB = database
-	r.redis = redisClient
+	r.Cache = redisClient
 
 	router := chi.NewRouter()
 
 	router.Route("/v1", func(routerChi chi.Router) {
-		routerChi.Mount("/authentication", handler.NewAuthHandler(usecase.NewAuthUsecase(repository.NewAuthRepository(r.redis), repository.NewUserRepository(r.DB, r.redis))).Routes())
+		// Auth Dependency Injection
+		routerChi.Mount("/authentication/user", handler.NewAuthHandler(usecase.NewAuthUsecase(repository.NewAuthRepository(r.Cache), repository.NewUserRepository(r.DB, r.Cache))).Routes())
 	})
 	return router
 }

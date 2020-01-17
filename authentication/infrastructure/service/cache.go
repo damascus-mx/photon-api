@@ -1,14 +1,14 @@
 package service
 
 import (
-	"fmt"
+	"log"
 
 	env "github.com/damascus-mx/photon-api/authentication/common/config"
 	"github.com/go-redis/redis/v7"
 )
 
-// InitRedis Get a new redis client pool
-func InitRedis() *redis.Client {
+// InitCache Get a new redis client pool
+func InitCache() *redis.Client {
 	client := redis.NewClient(&redis.Options{
 		Addr:     env.REDIS_CONNECTION,
 		Password: env.REDIS_PASSWORD,
@@ -18,10 +18,11 @@ func InitRedis() *redis.Client {
 	conn := client.Conn()
 	defer conn.Close()
 
-	pong, err := conn.Ping().Result()
+	_, err := conn.Ping().Result()
 	if err != nil {
 		panic(err.Error())
 	}
-	fmt.Printf("\nRedis ping - %s\n", pong)
+
+	log.Printf(env.ServiceConnected, "Cache")
 	return client
 }

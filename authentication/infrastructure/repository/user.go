@@ -10,31 +10,36 @@ import (
 	"time"
 )
 
+// UserRepository User repository
 type UserRepository struct {
 	DB    *sql.DB
-	redis *redis.Client
+	Cache *redis.Client
 }
 
-func NewUserRepository(database *sql.DB, redisClient *redis.Client) *UserRepository {
-	return &UserRepository{DB: database, redis: redisClient}
+// NewUserRepository Get user repository
+func NewUserRepository(database *sql.DB, cacheClient *redis.Client) *UserRepository {
+	return &UserRepository{DB: database, Cache: cacheClient}
 }
 
+// FetchByUsername Get user by username
 func (u *UserRepository) FetchByUsername(username string) (*entity.UserModel, error) {
 	// Check cache layer
-	conn := u.redis.Conn()
+	conn := u.Cache.Conn()
 	defer conn.Close()
 
 	user := new(entity.UserModel)
 
-	usrJson, err := u.redis.Get(fmt.Sprintf("auth:user:%s", username)).Result()
+	usrJSON, err := u.Cache.Get(fmt.Sprintf("auth:user:%s", username)).Result()
 	if err != nil {
 		return nil, err
-	} else if usrJson != "" {
-		json.Unmarshal([]byte(usrJson), &user)
+	} else if usrJSON != "" {
+		json.Unmarshal([]byte(usrJSON), &user)
 		err = user.Validate()
 		if err != nil {
 			return nil, err
 		}
+
+		return user, nil
 	}
 
 	// Search in DB
@@ -50,6 +55,7 @@ func (u *UserRepository) FetchByUsername(username string) (*entity.UserModel, er
 		return nil, err
 	}
 
+	// Send user to cache
 	go func() {
 		jsonUsr, err := json.Marshal(user)
 		if err != nil {
