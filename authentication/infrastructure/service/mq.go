@@ -21,16 +21,6 @@ func InitMQBroker() *amqp.Connection {
 	}
 	defer ch.Close()
 
-	err = ch.ExchangeDeclare(
-		"auth_events", // name of the exchange
-		"direct",      // type
-		false,         // durable
-		false,         // delete when complete
-		false,         // internal
-		false,         // noWait
-		nil,           // arguments
-	)
-
 	log.Printf(env.ServiceConnected, "MQ Broker")
 	return conn
 }

@@ -2,11 +2,11 @@ package env
 
 const (
 	// ServiceConnected Service started
-	ServiceConnected string = "\nSERVICE: %s service started ...\n"
+	ServiceConnected string = "SERVICE: %s service started ..."
 	// FailedService Service failed
-	FailedService string = "\nSERVICE: Failed to start %s service\n"
+	FailedService string = "SERVICE: Failed to start %s service"
 	// FailedMQError Fail to do MQ action
-	FailedMQError string = "\nMQ BROKER: Failed to do operation on %s\n-		Error: %s\n"
+	FailedMQError string = "MQ BROKER: Failed to do operation on %s-		Error: %s"
 	// MQExchange MQ Broker Exchange
-	MQExchange string = "auth"
+	MQExchange string = "user_events"
 )

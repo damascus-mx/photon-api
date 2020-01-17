@@ -1,9 +1,10 @@
 package handler
 
 import (
-	env "github.com/damascus-mx/photon-api/authentication/common/config"
-	"github.com/streadway/amqp"
 	"log"
+
+	"github.com/damascus-mx/photon-api/authentication/common/util"
+	"github.com/streadway/amqp"
 )
 
 // MQUser MQ Broker for user
@@ -18,28 +19,51 @@ func NewMQUser(mqConn *amqp.Connection) *MQUser {
 
 func (m *MQUser) init() {
 	// Start event-listeners
+	ch, err := m.MQ.Channel()
+	util.FailOnErrorMQ(err, "onUserExchange")
+	defer ch.Close()
+
+	// Create an exchange to bind queues
+	err = ch.ExchangeDeclare(
+		"user",  // name
+		"topic", // type
+		true,    // durable
+		false,   // auto-deleted
+		false,   // internal
+		false,   // no-wait
+		nil,     // arguments
+	)
+	util.FailOnErrorMQ(err, "onUserExchange")
+
+	// Start and bind queues
+	m.onUserCreate()
 	m.onUserChange()
 }
 
 // onUserCreate Listen to user creation
 func (m *MQUser) onUserCreate() {
 	ch, err := m.MQ.Channel()
-	if err != nil {
-		log.Fatalf(env.FailedMQError, "onUserCreate", err.Error())
-	}
+	util.FailOnErrorMQ(err, "onUserCreate")
 	defer ch.Close()
 
 	q, err := ch.QueueDeclare(
-		"user.create", // name
-		true,          // durable
-		true,          // delete when unused
-		false,         // exclusive
-		false,         // no-wait
-		nil,           // arguments
+		"create_user_queue", // name
+		true,                // durable
+		true,                // delete when unused
+		false,               // exclusive
+		false,               // no-wait
+		nil,                 // arguments
 	)
-	if err != nil {
-		log.Fatal(env.FailedMQError, "onUserChanged", err.Error())
-	}
+	util.FailOnErrorMQ(err, "onUserCreate")
+
+	// Bind queue to exchange
+	err = ch.QueueBind(
+		q.Name,   // Queue name
+		"create", // Binding key
+		"user",   // Exchange name
+		false,
+		nil,
+	)
 
 	msgs, err := ch.Consume(
 		q.Name, // queue
@@ -50,9 +74,7 @@ func (m *MQUser) onUserCreate() {
 		false,  // no-wait
 		nil,    // args
 	)
-	if err != nil {
-		log.Fatal(env.FailedMQError, "onUserChanged", err.Error())
-	}
+	util.FailOnErrorMQ(err, "onUserCreate")
 
 	forever := make(chan bool)
 
@@ -64,29 +86,35 @@ func (m *MQUser) onUserCreate() {
 
 	log.Printf(" [*] Waiting for messages.")
 	<-forever
-
 }
 
 // onUserChange Listen to user changes
 func (m *MQUser) onUserChange() {
 	ch, err := m.MQ.Channel()
-	if err != nil {
-		log.Fatal(env.FailedMQError, "onUserChanged", err.Error())
-	}
+	util.FailOnErrorMQ(err, "onUserChanged")
 	defer ch.Close()
 
+	// Create queue to consume incoming messages
 	q, err := ch.QueueDeclare(
-		"user.update", // name
-		true,          // durable
-		true,          // delete when unused
-		false,         // exclusive
-		false,         // no-wait
-		nil,           // arguments
+		"update_user_queue", // name
+		false,               // durable
+		true,                // delete when unused
+		true,                // exclusive
+		false,               // no-wait
+		nil,                 // arguments
 	)
-	if err != nil {
-		log.Fatal(env.FailedMQError, "onUserChanged", err.Error())
-	}
+	util.FailOnErrorMQ(err, "onUserChanged")
 
+	// Bind to topic user.update route pattern
+	ch.QueueBind(
+		q.Name,   // Queue name
+		"update", // Binding Key
+		"user",   // exchange
+		false,
+		nil,
+	)
+
+	// Consume messages from queue
 	msgs, err := ch.Consume(
 		q.Name, // queue
 		"",     // consumer
@@ -96,9 +124,7 @@ func (m *MQUser) onUserChange() {
 		false,  // no-wait
 		nil,    // args
 	)
-	if err != nil {
-		log.Fatal(env.FailedMQError, "onUserChanged", err.Error())
-	}
+	util.FailOnErrorMQ(err, "onUserChanged")
 
 	forever := make(chan bool)
 

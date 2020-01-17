@@ -39,7 +39,7 @@ func (b *Bootstrapper) StartServices() {
 
 // StartHTTP Initialize HTTP Service bootstrapping
 func (b *Bootstrapper) StartHTTP() *chi.Mux {
-	log.Println("Starting Photon's Authentication service HTTP Server")
+	log.Println("Starting Photon Authentication service HTTP Server")
 	router := new(delivery.HTTPRouter)
 	mux := router.NewRouter(b.db, b.cache)
 
